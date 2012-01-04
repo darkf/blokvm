@@ -38,9 +38,7 @@ int main()
 	fread(bitmap2, BITMAP_SIZE, 1, fp);
 
 	while(!feof(fp)) {
-		PC = ftell(fp) - 1;
 		fread(&op, sizeof(op), 1, fp); /* read op */
-		//printf("op: %d | PC=%d\n", op, PC);
 		switch(op)
 		{
 			case 10: /* Do */
@@ -70,8 +68,7 @@ int main()
 				{
 					uchar addr;
 					fread(&addr, sizeof(uchar), 1, fp);
-					//printf("ptrto: addr=%d PC=%d\n", addr, PC);
-					mem[addr] = PC+3; /* todo: is +3 needed? */
+					mem[addr] = ftell(fp);
 					break;
 				}
 			case 13: /* PtrFrom */
@@ -87,6 +84,7 @@ int main()
 				{
 					uchar args[3];
 					fread(args, 3, 1, fp);
+					PC = ftell(fp);
 					if(mem[args[0]] < 1)
 					{
 						if     (args[1] == 10) PC += mem[args[2]]; /* jump forward */
@@ -99,6 +97,7 @@ int main()
 				{
 					uchar args[3];
 					fread(args, 3, 1, fp);
+					PC = ftell(fp);
 					if(mem[args[0]] > args[1])
 					{
 						PC += mem[args[2]];
@@ -145,7 +144,7 @@ int main()
 				printf("end\n");
 				break;
 			default: /* bad opcode */
-				printf("bad opcode: %d | PC=%d\n", op, PC);
+				printf("bad opcode: %d | PC=%d\n", op, ftell(fp));
 				break;
 		}
 	}
