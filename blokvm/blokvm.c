@@ -13,7 +13,7 @@ typedef unsigned char uchar;
 char filename[] = "fib.BPF";
 char bitmap1[BITMAP_SIZE], bitmap2[BITMAP_SIZE];
 int mem[256];
-long PC = 0;
+int PC = 0;
 
 int main()
 {
@@ -37,14 +37,14 @@ int main()
 	fread(bitmap1, BITMAP_SIZE, 1, fp);
 	fread(bitmap2, BITMAP_SIZE, 1, fp);
 
-    while(!feof(fp)) {
+	while(!feof(fp)) {
 		PC = ftell(fp) - 1;
 		fread(&op, sizeof(op), 1, fp); /* read op */
 		//printf("op: %d | PC=%d\n", op, PC);
 		switch(op)
 		{
 		  case 10: /* Do */
-			{
+		  {
 			  /*uchar addr, oper, type, data;*/
 		      uchar args[4];
 			  int data;
@@ -65,7 +65,7 @@ int main()
 			  }
 
 		      break;
-			}
+		  }
 		  case 12: /* PtrTo */
 		  {
 			uchar addr;
@@ -89,7 +89,7 @@ int main()
 			fread(args, 3, 1, fp);
 			if(mem[args[0]] < 1)
 			{
-				if(args[1] == 10) PC += mem[args[2]]; /* jump forward */
+				if     (args[1] == 10) PC += mem[args[2]]; /* jump forward */
 				else if(args[1] == 20) PC -= mem[args[2]]; /* jump backward */
 				JMP
 			}
