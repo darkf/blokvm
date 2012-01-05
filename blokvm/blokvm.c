@@ -42,7 +42,7 @@ int main(int argc, char *argv[])
 	fread(bitmap2, BITMAP_SIZE, 1, fp);
 
 	while(!feof(fp)) {
-		fread(&op, sizeof(op), 1, fp); /* read op */
+		op = fgetc(fp); /* read op */
 		switch(op)
 		{
 			case 10: /* Do */
@@ -70,24 +70,22 @@ int main(int argc, char *argv[])
 				}
 			case 12: /* PtrTo */
 				{
-					uchar addr;
-					fread(&addr, sizeof(uchar), 1, fp);
+					uchar addr = fgetc(fp);
 					mem[addr] = ftell(fp);
 					break;
 				}
 			case 13: /* PtrFrom */
 				{
-					uchar addr;
-					fread(&addr, sizeof(uchar), 1, fp);
+					uchar addr = fgetc(fp);
 					//printf("ptrfrom: addr=%d mem=%d\n", addr, mem[addr]);
 					PC = mem[addr];
 					JMP
-						break;
+					break;
 				}
 			case 31: /* bPtrTo */
 				{
 					uchar args[3];
-					fread(args, 3, 1, fp);
+					fread(args, 1, 3, fp);
 					PC = ftell(fp);
 					if(mem[args[0]] < 1)
 					{
@@ -100,7 +98,7 @@ int main(int argc, char *argv[])
 			case 35: /* zPtrTo */
 				{
 					uchar args[3];
-					fread(args, 3, 1, fp);
+					fread(args, 1, 3, fp);
 					PC = ftell(fp);
 					if(mem[args[0]] > args[1])
 					{
@@ -111,8 +109,7 @@ int main(int argc, char *argv[])
 				}
 			case 14: /* BoolDie */
 				{
-					uchar addr;
-					fread(&addr, 1, 1, fp);
+					uchar addr = fgetc(fp);
 					printf("booldie: %d\n", mem[addr]);
 					if(mem[addr] < 0)
 						exit(1);
@@ -139,8 +136,7 @@ int main(int argc, char *argv[])
 				break;
 			case 11: /* Echo */
 				{
-					uchar addr;
-					fread(&addr, 1, 1, fp);
+					uchar addr = fgetc(fp);
 					printf("echo: %d\n", mem[addr]);
 					break;
 				}
