@@ -161,20 +161,33 @@ int main(int argc, char *argv[])
 			case 30: /* OutputDraw */
 				SDL_Flip(screen); /* flip backbuffer */
 				SDL_FillRect(screen, &screen->clip_rect, white); /* clear screen to white */
-				SDL_Delay(60); /* wait 60ms */
 				break;
 
-			case 25: /* mx */
-				break;
-			case 26: /* my */
-				break;
-			case 50: /* cmx */
-				break;
-			case 51: /* cmy */
-				break;
+			case 25:
+			case 26: /* mx and my */
+				{
+					uchar addr = fgetc(fp);
+					int x, y; SDL_GetMouseState(&x, &y);
+					mem[addr] = (op == 25) ? x : y;
+					break;
+				}
+			case 50:
+			case 51: /* cmd and cmy */
+				{
+					uchar addr = fgetc(fp);
+					int x, y;
+					if(SDL_GetMouseState(&x, &y) & SDL_BUTTON(1))
+						mem[addr] = (op == 50) ? x : y;
+					break;
+				}
 
 			case 15: /* Wait */
-				break;
+				{
+					uchar args[2];
+					fread(args, sizeof(uchar), sizeof(args), fp); /* read args */
+					SDL_Delay((args[0]/args[1]) * 1000); /* wait n ms */
+					break;
+				}
 			case 11: /* Echo */
 				{
 					uchar addr = fgetc(fp);
