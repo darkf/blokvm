@@ -1,0 +1,327 @@
+binBLOK Virtual Machine Standard for binBLOK Program Files, version 1.0 (BPF 1.0)
+by [real name removed -- blockeduser]
+Revised April 5, 2010
+
+----------------------------------------------------------------------------------------
+
+About the BPF 1.0 Standard ...
+I "created" the BPF 1.0 Standard in August 2007.
+Currently, I am working on a pseudo-C to BPF compiler (bpfc) as well as a BPF VM program
+(RunBPF).
+
+----------------------------------------------------------------------------------------
+
+Basics
+The binBLOK VM uses, by definition:
+- A resolution of 255x255 for graphical output (the "binBLOK Screen")
+- An simple approach to memory (256 registers, numbered 0 to 255, that can each contain
+any integer between -2^32 and 2^32 [the C signed int type should do])
+- A total of about 20 operation codes to manage both the graphical system "BPF-GFX" and
+the binary system (arithmetic, jumps, memory, etc.) "BPF-PRG".
+
+----------------------------------------------------------------------------------------
+
+Binary map
+1. Graphics bitmap (plain data, 255x255 pixels, RGB24, total 3x255^2 bytes)
+2. Graphics bitmap mask (plain data, 255x255 pixels, RGB24, total 3x255^2 bytes)
+3. Program data (all operation codes and arguments are encoded as one byte)
+
+----------------------------------------------------------------------------------------
+
+Codes used in operation codes
+1. Data type codes (for "Do" operation)
+Decimal value 1: directly use "Data" argument as operand (immediate value)
+Decimal value 2: use data found at address specified by "Data" argument as operand
+(abstract value)
+
+2. Arithmetic operation codes (for "Do" operation)
+Decimal value 10: equality operation (=)
+Decimal value 20: addition operation (+)
+Decimal value 30: subtraction operation (-)
+Decimal value 40: multiplication operation (*)
+Decimal value 50: division operation (/)
+
+3. Jump mode codes (for "bPtrTo" operation)
+Decimal value 10: Jump forward X bytes
+Decimal value 20: Jump backwards X bytes
+
+----------------------------------------------------------------------------------------
+
+Testing
+To test an implementation of the BPF 1.0 Standard, try running of the test programs (page four).
+binBLOK Virtual Machine operations and operation codes
+Please note that all operation codes have a fixed number of arguments (specified by the "Use"
+column) and that, as stated in "Binary Map", all operations and arguments are encoded as single
+bytes.
+
+----------------------------------------------------------------------------------------
+
+1. Arithmetic, memory and jump operations
+
+Decimal value 	Mnemonic name 		Use 				Effect
+
+10 		Do 			Do <Address>			Executes arithmetic
+					<Operation>			operation <Operation>
+					<DataType> <Data>		on data found at address
+									<Address> using as
+									operand <Data> (of
+									which the data type is	
+									specified by immediate
+									value <DataType>)
+
+12		PtrTo 			PtrTo <Address> 		Stores current program
+									location (byte address in
+									file) to address
+									<Address>.
+
+
+13 		PtrFrom 		PtrFrom <Address> 		Jumps to program
+									location (byte address in
+									file) specified at address
+									<Address>.
+
+
+31 		bPtrTo 			bPtrTo <Address>		If data at address
+					<JumpMode>			<Address> is inferior to
+					<Adress2>			one, jump by number of
+									bytes specified at
+									address <Address2> and													in direction specified by
+									immediate value
+									<JumpMode>.
+
+35 		zbPtrTo 		zbPtrTo <Address>		If data found at
+					<Value> <Address2>		<Address> exceeds
+									immediate value
+									<Value>, jump forward
+									by the number of bytes
+									indicated at address
+									<Address2>.
+
+
+14 		BoolDie 		BoolDie <Address> 		If data at <Adress> is
+									under zero, terminate
+									execution of program.
+
+
+----------------------------------------------------------------------------------------
+
+2. Graphical operations
+
+
+Decimal value	Mnemonic name		Use 			Effect
+
+20 		Draw 			Draw <DrawX>		This copies, from the graphics 
+					<DrawY>			bitmap* and to the frame-buffer, 
+					<DrawWidth>		a graphical rectangle with 
+					<DrawHeight>		coordinates defined by immediate
+					<InputX>		values <InputX>,<InputY>,<InputWidth>,
+					<InputY>		<InputX>,<InputY>,<InputWidth>,
+					<InputWidth>		<InputHeight> to a graphical rectangle
+					<InputHeight>		with coordinates specified by
+
+								immediate values <DrawX>,<DrawY>,
+								<DrawWidth>,<DrawHeight>.
+
+
+21 		vDraw 			Same use as		Same as the Draw operation, except that the
+					Draw			<DrawX> and <DrawY> arguments are instead
+								addresses to data (abstract values).
+
+
+30 		OutputDraw 		OutputDraw 		Directly copies frame-buffer to actual video output
+								("flips")
+------
+* The graphics bitmap mask is used as an alpha channel when copying to the frame-buffer
+
+----------------------------------------------------------------------------------------
+
+3. Mouse location operations
+Decimal value 	Mnemonic name		Use 			Effect
+
+25 		mx 			mx <Address> 		Stores current horizontal location of mouse to
+								address <Address>.
+
+
+26 		my 			my <Address> 		Stores current vertical location of mouse to
+								address <Address>.
+
+50 		cmx 			cmx <Address> 		If mouse button is down, stores current horizontal
+								location of mouse to address <Address>.
+
+51 		cmy 			cmy <Address> 		If mouse button is down, stores current vertical
+								location of mouse to address <Address>.
+
+
+----------------------------------------------------------------------------------------
+
+4. Miscellanea
+Decimal value 	Mnemonic name		Use 			Effect
+15 		Wait 			Wait			Waits number of seconds specified by
+					<Nominator>		<Nominator>/<Denominator> fraction before
+					<Denominator>		resuming program.
+
+11 		Echo 			Echo <Address> 		Prints out data at <Address> [if possible]
+
+255 		End 			End 			End-of-program indicator
+
+
+----------------------------------------------------------------------------------------
+
+5. Keyboard/game-controller interface specification
+
+At byte address 0,  the controller stores button state
+(0 = up, 1 = down) using the following byte contributions map
+(sort of a NES rip-off) :
+
+128 - up
+64 - down
+32 - left
+16 - right
+8 - Z button
+4 - X button
+2 - Enter button
+1 - Space button
+
+If decimal value 240 is written to address 0,
+address 0 must immediately take the value 123.
+
+----------------------------------------------------------------------------------------
+
+6. binBLOK Programming Examples
+
+Fibonacci numbers [retarded old 4-variable version]
+
+As a classic example, this program outputs the first sixteen Fibonacci numbers.
+Do 1 10 1 1	;x=1
+Do 4 10 1 1	;y=1
+Echo 1 		;print x
+Do 5 10 1 15 	;timeout=15
+PtrTo 6 	;store location to myrepeat
+Do 5 30 1 1 	;timeout-1
+Do 1 20 2 4 	;x=x+y
+Do 2 10 2 1 	;ox=x
+Do 3 10 2 4 	;oy=y
+Do 4 10 2 2 	;y=ox
+Do 1 10 2 3 	;x=oy
+Echo 1 		;print x
+BoolDie 5 	;exit if timeout<0
+PtrFrom 6 	;goto myrepeat
+
+Expected output: 1 1 2 3 5 8 13 21 34 55 89 144 233 377 610 987
+ 
+Another example -- listing primes between 1 and 100 (made with bpfc pseudo-C -> BPF
+compiler):
+
+Do 1 10 1 1
+Do 2 10 1 100
+PtrTo 3
+Do 1 20 1 1
+Do 5 10 1 0
+Do 6 10 1 0
+PtrTo 15
+Do 7 10 1 3
+PtrTo 16
+Do 255 10 1 191
+Do 254 10 1 0
+Do 254 30 2 5
+Do 254 20 1 1
+zbPtrTo 254 0 255
+Do 255 10 1 12
+Do 254 10 2 8
+Do 254 30 1 1
+Do 254 20 1 1
+zbPtrTo 254 0 255
+Do 7 10 1 0
+Do 5 10 1 0
+PtrFrom 16
+Do 255 10 1 12
+Do 254 10 2 9
+Do 254 30 1 1
+Do 254 20 1 1
+zbPtrTo 254 0 255
+Do 7 10 1 0
+Do 5 10 1 0
+PtrFrom 16
+PtrTo 17
+Do 11 10 2 9
+PtrTo 18
+Do 8 30 1 1
+Do 11 30 1 1
+Do 255 10 1 38
+Do 254 10 2 11
+Do 254 30 1 1
+Do 254 20 1 1
+zbPtrTo 254 0 255
+Do 255 10 1 12
+Do 254 10 2 8
+Do 254 30 1 1
+Do 254 20 1 1
+zbPtrTo 254 0 255
+Do 7 10 1 1
+Do 5 10 1 0
+PtrFrom 16
+PtrFrom 17
+Do 255 10 1 12
+Do 254 10 2 8
+Do 254 30 1 1
+Do 254 20 1 1
+zbPtrTo 254 0 255
+Do 7 10 1 0
+Do 5 10 1 0
+PtrFrom 16
+PtrFrom 18
+Do 255 10 1 2
+Do 254 10 1 0
+Do 254 30 2 6
+Do 254 20 1 1
+zbPtrTo 254 0 255
+PtrFrom 13
+Do 19 10 1 1
+Do 20 10 2 1
+Do 20 50 1 2
+Do 4 10 1 1
+Do 7 10 1 0
+PtrTo 13
+Do 255 10 1 10
+Do 254 10 1 0
+Do 254 30 2 7
+Do 254 20 1 1
+zbPtrTo 254 0 255
+Do 4 10 1 0
+Do 14 10 2 9
+Do 255 10 1 66
+Do 254 10 2 7
+Do 254 30 1 1
+Do 254 20 1 1
+zbPtrTo 254 0 255
+Do 19 20 1 1
+Do 21 10 2 20
+Do 21 30 2 19
+Do 21 20 1 1
+Do 255 10 1 22
+Do 254 10 1 0
+Do 254 30 2 21
+Do 254 20 1 1
+zbPtrTo 254 0 255
+Do 6 10 1 1
+Do 5 10 1 1
+Do 8 10 2 1
+Do 9 10 2 19
+PtrFrom 15
+Do 255 10 1 2
+Do 254 10 1 0
+Do 254 30 2 4
+Do 254 20 1 1
+zbPtrTo 254 0 255
+Echo 1
+Do 2 30 1 1
+Do 255 10 1 2
+Do 254 10 1 1
+Do 254 30 2 2
+Do 254 20 1 1
+zbPtrTo 254 0 255
+PtrFrom 3
+
+
+
+----------------------------------------------------------------------------------------
