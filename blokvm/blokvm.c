@@ -166,7 +166,6 @@ int main(int argc, char *argv[])
 			case 14: /* BoolDie */
 				{
 					uchar addr = fgetc(fp);
-					printf("booldie: %d\n", mem[addr]);
 					if(mem[addr] < 0)
 						exit(1);
 					break;
@@ -182,7 +181,7 @@ int main(int argc, char *argv[])
 					dst.x = args[0]; dst.y = args[1]; dst.w = args[2]; dst.h = args[3];
 
 					/* scaling/clipping algorithm */
-					uchar x, y;
+					int x, y;
 					for(y = dst.y; y < dst.y + dst.h; ++y)
 						for(x = dst.x; x < dst.x + dst.w; ++x)
 						{
@@ -206,7 +205,7 @@ int main(int argc, char *argv[])
 					dst.x = mem[args[0]]; dst.y = mem[args[1]]; dst.w = args[2]; dst.h = args[3];
 
 					/* scaling/clipping algorithm */
-					uchar x, y;
+					int x, y;
 					for(y = dst.y; y < dst.y + dst.h; ++y)
 						for(x = dst.x; x < dst.x + dst.w; ++x)
 						{
