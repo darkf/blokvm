@@ -3,6 +3,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <SDL.h>
 
 /* 3 * 255^2 */
 #define BITMAP_SIZE 195075
@@ -10,9 +11,11 @@
 
 typedef unsigned char uchar;
 
-char bitmap1[BITMAP_SIZE], bitmap2[BITMAP_SIZE];
+char bbitmap1[BITMAP_SIZE], bbitmap2[BITMAP_SIZE];
 int mem[256];
 int PC = 0;
+SDL_Surface *screen, *bitmap1, *bitmap2;
+Uint32 white;
 
 int main(int argc, char *argv[])
 {
@@ -38,8 +41,28 @@ int main(int argc, char *argv[])
 	fseek(fp, 0, SEEK_SET);
 
 	/* read bitmaps */
-	fread(bitmap1, BITMAP_SIZE, 1, fp);
-	fread(bitmap2, BITMAP_SIZE, 1, fp);
+	fread(bbitmap1, BITMAP_SIZE, 1, fp);
+	fread(bbitmap2, BITMAP_SIZE, 1, fp);
+
+	SDL_Init(SDL_INIT_VIDEO);
+	screen = SDL_SetVideoMode(255, 255, 32, SDL_SWSURFACE);
+	if(!screen) {
+		printf("couldn't initialize screen\n");
+		return 5;
+	}
+
+	bitmap1 = SDL_CreateRGBSurfaceFrom(bbitmap1, 255, 255, 24, 255*3, 0, 0, 0, 0);
+	bitmap2 = SDL_CreateRGBSurfaceFrom(bbitmap2, 255, 255, 24, 255*3, 0, 0, 0, 0);
+
+	if(!bitmap1 || !bitmap2) {
+		printf("couldn't load bitmaps\n");
+		return 4;
+	}
+
+	bitmap1 = SDL_ConvertSurface(bitmap1, screen->format, 0);
+	bitmap2 = SDL_ConvertSurface(bitmap2, screen->format, 0);
+
+	white = SDL_MapRGB(screen->format, 255, 255, 255);
 
 	while(!feof(fp)) {
 		op = fgetc(fp); /* read op */
@@ -47,7 +70,6 @@ int main(int argc, char *argv[])
 		{
 			case 10: /* Do */
 				{
-					/*uchar addr, oper, type, data;*/
 					uchar args[4];
 					int data;
 					fread(args, sizeof(uchar), sizeof(args), fp); /* read args */
@@ -117,10 +139,29 @@ int main(int argc, char *argv[])
 				}
 
 			case 20: /* Draw */
-				break;
+				{
+					uchar args[8];
+					SDL_Rect src, dst;
+					fread(args, sizeof(uchar), sizeof(args), fp); /* read args */
+					src.x = args[4]; src.y = args[5]; src.w = args[6]; src.h = args[7];
+					dst.x = args[0]; dst.y = args[1]; dst.w = args[2]; dst.h = args[3];
+					SDL_BlitSurface(bitmap1, &src, screen, &dst);
+					break;
+				}
 			case 21: /* vDraw */
-				break;
+				{
+					uchar args[8];
+					SDL_Rect src, dst;
+					fread(args, sizeof(uchar), sizeof(args), fp); /* read args */
+					src.x = args[4]; src.y = args[5]; src.w = args[6]; src.h = args[7];
+					dst.x = mem[args[0]]; dst.y = mem[args[1]]; dst.w = args[2]; dst.h = args[3];
+					SDL_BlitSurface(bitmap1, &src, screen, &dst);
+					break;
+				}
 			case 30: /* OutputDraw */
+				SDL_Flip(screen); /* flip backbuffer */
+				SDL_FillRect(screen, &screen->clip_rect, white); /* clear screen to white */
+				SDL_Delay(60); /* wait 60ms */
 				break;
 
 			case 25: /* mx */
