@@ -66,6 +66,21 @@ int main(int argc, char *argv[])
 
 	while(!feof(fp)) {
 		op = fgetc(fp); /* read op */
+		if(mem[0] == 240) mem[0] = 123;
+		else {
+			int n;
+			Uint8 *keymap = SDL_GetKeyState(&n);
+			mem[0] = 0;
+			if(keymap[SDLK_UP]) mem[0]     |= 128;
+			if(keymap[SDLK_DOWN]) mem[0]   |= 64;
+			if(keymap[SDLK_LEFT]) mem[0]   |= 32;
+			if(keymap[SDLK_RIGHT]) mem[0]  |= 16;
+			if(keymap[SDLK_z]) mem[0]      |= 8;
+			if(keymap[SDLK_x]) mem[0]      |= 4;
+			if(keymap[SDLK_RETURN]) mem[0] |= 2;
+			if(keymap[SDLK_SPACE]) mem[0]  |= 1;
+		}
+
 		switch(op)
 		{
 			case 10: /* Do */
@@ -172,7 +187,7 @@ int main(int argc, char *argv[])
 					break;
 				}
 			case 50:
-			case 51: /* cmd and cmy */
+			case 51: /* cmx and cmy */
 				{
 					uchar addr = fgetc(fp);
 					int x, y;
