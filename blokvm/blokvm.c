@@ -68,12 +68,15 @@ int main(int argc, char *argv[])
 
 	white = SDL_MapRGB(screen->format, 255, 255, 255);
 
+	SDL_FillRect(screen, &screen->clip_rect, white); /* clear screen to white */
+
 	while(!feof(fp)) {
 		op = fgetc(fp); /* read op */
+		SDL_PumpEvents();/* update SDL key/mouse state data */
+
 		if(mem[0] == 240) mem[0] = 123;
 		else {
-			int n;
-			Uint8 *keymap = SDL_GetKeyState(&n);
+			Uint8 *keymap = SDL_GetKeyState(NULL);
 			mem[0] = 0;
 			if(keymap[SDLK_UP]) mem[0]     |= 128;
 			if(keymap[SDLK_DOWN]) mem[0]   |= 64;
@@ -118,7 +121,6 @@ int main(int argc, char *argv[])
 			case 13: /* PtrFrom */
 				{
 					uchar addr = fgetc(fp);
-					//printf("ptrfrom: addr=%d mem=%d\n", addr, mem[addr]);
 					PC = mem[addr];
 					JMP
 					break;
@@ -179,7 +181,6 @@ int main(int argc, char *argv[])
 				}
 			case 30: /* OutputDraw */
 				SDL_Flip(screen); /* flip backbuffer */
-				SDL_FillRect(screen, &screen->clip_rect, white); /* clear screen to white */
 				break;
 
 			case 25:
