@@ -3,7 +3,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <SDL.h>
+#include <SDL/SDL.h>
 
 /* 3 * 255^2 */
 #define BITMAP_SIZE 195075
@@ -16,6 +16,19 @@ int mem[256];
 int PC = 0;
 SDL_Surface *screen, *bitmap1, *bitmap2;
 Uint32 white;
+
+void putpixel(SDL_Surface* dest, int x, int y, int r, int g, int b)
+{
+	SDL_PixelFormat *pixelFormat = dest -> format;
+	Uint32 rectColor = SDL_MapRGB(pixelFormat, r, g, b);
+	struct SDL_Rect rectRegion = { x, y, 1, 1 };
+	SDL_FillRect(dest, &rectRegion, rectColor);
+}
+
+char fetch_rgb(char* bbitmap, int x, int y, char chan)
+{
+	return bbitmap[3 * (255 * y + x) + chan];
+}
 
 int main(int argc, char *argv[])
 {
@@ -162,21 +175,49 @@ int main(int argc, char *argv[])
 			case 20: /* Draw */
 				{
 					uchar args[8];
+
 					SDL_Rect src, dst;
 					fread(args, sizeof(uchar), sizeof(args), fp); /* read args */
 					src.x = args[4]; src.y = args[5]; src.w = args[6]; src.h = args[7];
 					dst.x = args[0]; dst.y = args[1]; dst.w = args[2]; dst.h = args[3];
-					SDL_BlitSurface(bitmap1, &src, screen, &dst);
+
+					/* scaling/clipping algorithm */
+					uchar x, y;
+					for(y = dst.y; y < dst.y + dst.h; ++y)
+						for(x = dst.x; x < dst.x + dst.w; ++x)
+						{
+							uchar src_x = src.x + src.w * (x - dst.x) / dst.w;
+							uchar src_y = src.y + src.h * (y - dst.y) / dst.h;
+							putpixel(screen, x, y,
+								fetch_rgb(bbitmap1, src_x, src_y, 0),
+								fetch_rgb(bbitmap1, src_x, src_y, 1),
+								fetch_rgb(bbitmap1, src_x, src_y, 2));
+						}
+
 					break;
 				}
 			case 21: /* vDraw */
 				{
 					uchar args[8];
+
 					SDL_Rect src, dst;
 					fread(args, sizeof(uchar), sizeof(args), fp); /* read args */
 					src.x = args[4]; src.y = args[5]; src.w = args[6]; src.h = args[7];
 					dst.x = mem[args[0]]; dst.y = mem[args[1]]; dst.w = args[2]; dst.h = args[3];
-					SDL_BlitSurface(bitmap1, &src, screen, &dst);
+
+					/* scaling/clipping algorithm */
+					uchar x, y;
+					for(y = dst.y; y < dst.y + dst.h; ++y)
+						for(x = dst.x; x < dst.x + dst.w; ++x)
+						{
+							uchar src_x = src.x + src.w * (x - dst.x) / dst.w;
+							uchar src_y = src.y + src.h * (y - dst.y) / dst.h;
+							putpixel(screen, x, y,
+								fetch_rgb(bbitmap1, src_x, src_y, 0),
+								fetch_rgb(bbitmap1, src_x, src_y, 1),
+								fetch_rgb(bbitmap1, src_x, src_y, 2));
+						}
+
 					break;
 				}
 			case 30: /* OutputDraw */
