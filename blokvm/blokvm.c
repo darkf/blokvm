@@ -200,7 +200,7 @@ int main(int argc, char *argv[])
 				{
 					uchar args[2];
 					fread(args, sizeof(uchar), sizeof(args), fp); /* read args */
-					SDL_Delay((args[0]/args[1]) * 1000); /* wait n ms */
+					SDL_Delay((1000 * args[0]) / args[1]); /* wait n ms */
 					break;
 				}
 			case 11: /* Echo */
