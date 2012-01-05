@@ -10,21 +10,25 @@
 
 typedef unsigned char uchar;
 
-char filename[] = "fib.BPF";
 char bitmap1[BITMAP_SIZE], bitmap2[BITMAP_SIZE];
 int mem[256];
 int PC = 0;
 
-int main()
+int main(int argc, char *argv[])
 {
 	FILE *fp;
 	long flen;
 	uchar op;
 
+	if(argc != 2) {
+		printf("usage: %s FILE\n", argv[0]);
+		return 1;
+	}
+
 	/* open file */
-	fp = fopen(filename, "rb");
+	fp = fopen(argv[1], "rb");
 	if(!fp) {
-		printf("failed to open file %s\n", filename);
+		printf("failed to open file %s\n", argv[1]);
 		return 1;
 	}
 
