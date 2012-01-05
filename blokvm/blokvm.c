@@ -3,7 +3,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <SDL/SDL.h>
+#include <SDL.h>
 
 /* 3 * 255^2 */
 #define BITMAP_SIZE 195075
@@ -15,20 +15,14 @@ char bbitmap1[BITMAP_SIZE], bbitmap2[BITMAP_SIZE];
 int mem[256];
 int PC = 0;
 SDL_Surface *screen, *bitmap1, *bitmap2;
-Uint32 white;
 
 void putpixel(SDL_Surface* dest, int x, int y, int r, int g, int b)
 {
-	SDL_PixelFormat *pixelFormat = dest -> format;
-	Uint32 rectColor = SDL_MapRGB(pixelFormat, r, g, b);
-	struct SDL_Rect rectRegion = { x, y, 1, 1 };
-	SDL_FillRect(dest, &rectRegion, rectColor);
+	struct SDL_Rect rectRegion = {x, y, 1, 1};
+	SDL_FillRect(dest, &rectRegion, SDL_MapRGB(dest->format, r, g, b));
 }
 
-char fetch_rgb(char* bbitmap, int x, int y, char chan)
-{
-	return bbitmap[3 * (255 * y + x) + chan];
-}
+#define GET_PIXEL(bitmap, x, y, chan) bitmap[3 * (255 * y + x) + chan]
 
 int main(int argc, char *argv[])
 {
@@ -79,14 +73,12 @@ int main(int argc, char *argv[])
 	bitmap1 = SDL_ConvertSurface(bitmap1, screen->format, 0);
 	bitmap2 = SDL_ConvertSurface(bitmap2, screen->format, 0);
 
-	white = SDL_MapRGB(screen->format, 255, 255, 255);
-
-	SDL_FillRect(screen, &screen->clip_rect, white); /* clear screen to white */
+	SDL_FillRect(screen, &screen->clip_rect, SDL_MapRGB(screen->format, 255, 255, 255)); /* clear screen to white */
 
 	while(!feof(fp)) {
 		op = fgetc(fp); /* read op */
-		SDL_PumpEvents();/* update SDL key/mouse state data */
 
+		SDL_PumpEvents(); /* update SDL key/mouse state data */
 		if(mem[0] == 240) mem[0] = 123;
 		else {
 			Uint8 *keymap = SDL_GetKeyState(NULL);
@@ -174,6 +166,7 @@ int main(int argc, char *argv[])
 			case 20: /* Draw */
 				{
 					uchar args[8];
+					int x, y;
 
 					SDL_Rect src, dst;
 					fread(args, sizeof(uchar), sizeof(args), fp); /* read args */
@@ -181,16 +174,15 @@ int main(int argc, char *argv[])
 					dst.x = args[0]; dst.y = args[1]; dst.w = args[2]; dst.h = args[3];
 
 					/* scaling/clipping algorithm */
-					int x, y;
 					for(y = dst.y; y < dst.y + dst.h; ++y)
 						for(x = dst.x; x < dst.x + dst.w; ++x)
 						{
 							uchar src_x = src.x + src.w * (x - dst.x) / dst.w;
 							uchar src_y = src.y + src.h * (y - dst.y) / dst.h;
 							putpixel(screen, x, y,
-								fetch_rgb(bbitmap1, src_x, src_y, 0),
-								fetch_rgb(bbitmap1, src_x, src_y, 1),
-								fetch_rgb(bbitmap1, src_x, src_y, 2));
+								GET_PIXEL(bbitmap1, src_x, src_y, 0),
+								GET_PIXEL(bbitmap1, src_x, src_y, 1),
+								GET_PIXEL(bbitmap1, src_x, src_y, 2));
 						}
 
 					break;
@@ -198,6 +190,7 @@ int main(int argc, char *argv[])
 			case 21: /* vDraw */
 				{
 					uchar args[8];
+					int x, y;
 
 					SDL_Rect src, dst;
 					fread(args, sizeof(uchar), sizeof(args), fp); /* read args */
@@ -205,16 +198,15 @@ int main(int argc, char *argv[])
 					dst.x = mem[args[0]]; dst.y = mem[args[1]]; dst.w = args[2]; dst.h = args[3];
 
 					/* scaling/clipping algorithm */
-					int x, y;
 					for(y = dst.y; y < dst.y + dst.h; ++y)
 						for(x = dst.x; x < dst.x + dst.w; ++x)
 						{
 							uchar src_x = src.x + src.w * (x - dst.x) / dst.w;
 							uchar src_y = src.y + src.h * (y - dst.y) / dst.h;
 							putpixel(screen, x, y,
-								fetch_rgb(bbitmap1, src_x, src_y, 0),
-								fetch_rgb(bbitmap1, src_x, src_y, 1),
-								fetch_rgb(bbitmap1, src_x, src_y, 2));
+								GET_PIXEL(bbitmap1, src_x, src_y, 0),
+								GET_PIXEL(bbitmap1, src_x, src_y, 1),
+								GET_PIXEL(bbitmap1, src_x, src_y, 2));
 						}
 
 					break;
@@ -266,4 +258,3 @@ int main(int argc, char *argv[])
 	fclose(fp);
 	return 0;
 }
-
