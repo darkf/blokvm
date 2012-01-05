@@ -53,7 +53,7 @@ int main(int argc, char *argv[])
 
 #if SDL_BYTEORDER == SDL_LIL_ENDIAN
 	bitmap1 = SDL_CreateRGBSurfaceFrom(bbitmap1, 255, 255, 24, 255*3, 0x0000FF, 0x00FF00, 0xFF0000, 0); /* LE machines use BGR instead of RGB */
-#elif
+#else
 	bitmap1 = SDL_CreateRGBSurfaceFrom(bbitmap1, 255, 255, 24, 255*3, 0, 0, 0, 0);
 #endif
 	bitmap2 = SDL_CreateRGBSurfaceFrom(bbitmap2, 255, 255, 24, 255*3, 0, 0, 0, 0);
