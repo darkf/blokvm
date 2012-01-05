@@ -12,8 +12,7 @@
 typedef unsigned char uchar;
 
 char bbitmap1[BITMAP_SIZE], bbitmap2[BITMAP_SIZE];
-int mem[256];
-int PC = 0;
+int mem[256], PC = 0;
 SDL_Surface *screen, *bitmap1, *bitmap2;
 
 void putpixel(SDL_Surface* dest, int x, int y, int r, int g, int b)
@@ -70,9 +69,6 @@ int main(int argc, char *argv[])
 		return 4;
 	}
 
-	bitmap1 = SDL_ConvertSurface(bitmap1, screen->format, 0);
-	bitmap2 = SDL_ConvertSurface(bitmap2, screen->format, 0);
-
 	SDL_FillRect(screen, &screen->clip_rect, SDL_MapRGB(screen->format, 255, 255, 255)); /* clear screen to white */
 
 	while(!feof(fp)) {
@@ -83,14 +79,14 @@ int main(int argc, char *argv[])
 		else {
 			Uint8 *keymap = SDL_GetKeyState(NULL);
 			mem[0] = 0;
-			if(keymap[SDLK_UP]) mem[0]     |= 128;
-			if(keymap[SDLK_DOWN]) mem[0]   |= 64;
-			if(keymap[SDLK_LEFT]) mem[0]   |= 32;
-			if(keymap[SDLK_RIGHT]) mem[0]  |= 16;
-			if(keymap[SDLK_z]) mem[0]      |= 8;
-			if(keymap[SDLK_x]) mem[0]      |= 4;
+			if(keymap[SDLK_UP])     mem[0] |= 128;
+			if(keymap[SDLK_DOWN])   mem[0] |= 64;
+			if(keymap[SDLK_LEFT])   mem[0] |= 32;
+			if(keymap[SDLK_RIGHT])  mem[0] |= 16;
+			if(keymap[SDLK_z])      mem[0] |= 8;
+			if(keymap[SDLK_x])      mem[0] |= 4;
 			if(keymap[SDLK_RETURN]) mem[0] |= 2;
-			if(keymap[SDLK_SPACE]) mem[0]  |= 1;
+			if(keymap[SDLK_SPACE])  mem[0] |= 1;
 		}
 
 		switch(op)
