@@ -50,7 +50,7 @@ int main(int argc, char *argv[])
 					/*uchar addr, oper, type, data;*/
 					uchar args[4];
 					int data;
-					fread(args, 1, 4, fp);
+					fread(args, sizeof(uchar), sizeof(args), fp); /* read args */
 					switch(args[2] /* type */)
 					{
 						case 1: data = args[3]; break; /* immediate value */
@@ -85,7 +85,7 @@ int main(int argc, char *argv[])
 			case 31: /* bPtrTo */
 				{
 					uchar args[3];
-					fread(args, 1, 3, fp);
+					fread(args, sizeof(uchar), sizeof(args), fp); /* read args */
 					PC = ftell(fp);
 					if(mem[args[0]] < 1)
 					{
@@ -98,7 +98,7 @@ int main(int argc, char *argv[])
 			case 35: /* zPtrTo */
 				{
 					uchar args[3];
-					fread(args, 1, 3, fp);
+					fread(args, sizeof(uchar), sizeof(args), fp); /* read args */
 					PC = ftell(fp);
 					if(mem[args[0]] > args[1])
 					{
