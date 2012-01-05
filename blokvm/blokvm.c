@@ -87,6 +87,8 @@ int main(int argc, char *argv[])
 			if(keymap[SDLK_x])      mem[0] |= 4;
 			if(keymap[SDLK_RETURN]) mem[0] |= 2;
 			if(keymap[SDLK_SPACE])  mem[0] |= 1;
+
+			if(keymap[SDLK_ESCAPE])	break;
 		}
 
 		switch(op)
