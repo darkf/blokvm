@@ -15,9 +15,18 @@ char bbitmap1[BITMAP_SIZE], bbitmap2[BITMAP_SIZE];
 int mem[256], PC = 0;
 SDL_Surface *screen, *bitmap1, *bitmap2;
 
+int clip(int val)
+{
+	if(val < 0)
+		return 0;
+	else if(val > 255)
+		return 255;
+	else 	return val;
+}
+
 void putpixel(SDL_Surface* dest, int x, int y, int r, int g, int b)
 {
-	struct SDL_Rect rectRegion = {x, y, 1, 1};
+	struct SDL_Rect rectRegion = {clip(x), clip(y), 1, 1};
 	SDL_FillRect(dest, &rectRegion, SDL_MapRGB(dest->format, r, g, b));
 }
 
@@ -25,8 +34,8 @@ void putpixel(SDL_Surface* dest, int x, int y, int r, int g, int b)
 char getrgb(SDL_Surface* surface, int x, int y, char chan)
 {
 	int bpp = surface->format->BytesPerPixel;
-	Uint8 *p = (Uint8 *)surface->pixels + y * surface->pitch + x * bpp;
-
+	Uint8 *p = (Uint8 *)surface->pixels + clip(y) * surface->pitch + clip(x) * bpp;
+	
 	return p[chan];
 }
 
