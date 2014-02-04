@@ -15,13 +15,29 @@ char bbitmap1[BITMAP_SIZE], bbitmap2[BITMAP_SIZE];
 int mem[256], PC = 0;
 SDL_Surface *screen, *bitmap1, *bitmap2;
 
+int clip(int val)
+{
+	if(val < 0)
+		return 0;
+	else if(val > 255)
+		return 255;
+	else 	return val;
+}
+
 void putpixel(SDL_Surface* dest, int x, int y, int r, int g, int b)
 {
-	struct SDL_Rect rectRegion = {x, y, 1, 1};
+	struct SDL_Rect rectRegion = {clip(x), clip(y), 1, 1};
 	SDL_FillRect(dest, &rectRegion, SDL_MapRGB(dest->format, r, g, b));
 }
 
-#define GET_PIXEL(bitmap, x, y, chan) bitmap[3 * (255 * y + x) + chan]
+/* derived from getpixel example in SDL docs */
+char getrgb(SDL_Surface* surface, int x, int y, char chan)
+{
+	int bpp = surface->format->BytesPerPixel;
+	Uint8 *p = (Uint8 *)surface->pixels + clip(y) * surface->pitch + clip(x) * bpp;
+	
+	return p[chan];
+}
 
 int main(int argc, char *argv[])
 {
@@ -87,6 +103,8 @@ int main(int argc, char *argv[])
 			if(keymap[SDLK_x])      mem[0] |= 4;
 			if(keymap[SDLK_RETURN]) mem[0] |= 2;
 			if(keymap[SDLK_SPACE])  mem[0] |= 1;
+
+			if(keymap[SDLK_ESCAPE])	break;  
 		}
 
 		switch(op)
@@ -169,16 +187,26 @@ int main(int argc, char *argv[])
 					src.x = args[4]; src.y = args[5]; src.w = args[6]; src.h = args[7];
 					dst.x = args[0]; dst.y = args[1]; dst.w = args[2]; dst.h = args[3];
 
-					/* scaling/clipping algorithm */
+					/* scaling/clipping/alpha-blending algorithm */
 					for(y = dst.y; y < dst.y + dst.h; ++y)
 						for(x = dst.x; x < dst.x + dst.w; ++x)
 						{
 							uchar src_x = src.x + src.w * (x - dst.x) / dst.w;
 							uchar src_y = src.y + src.h * (y - dst.y) / dst.h;
+							uchar sr = getrgb(screen, x, y, 0);			/* screen rgb */
+							uchar sg = getrgb(screen, x, y, 1);
+							uchar sb = getrgb(screen, x, y, 2);
+							uchar ir = getrgb(bitmap1, src_x, src_y, 0);	/* image rgb */
+							uchar ig = getrgb(bitmap1, src_x, src_y, 1);
+							uchar ib = getrgb(bitmap1, src_x, src_y, 2);
+							uchar a = getrgb(bitmap2, src_x, src_y, 0);	/* alpha */
+
+							if(a==255) continue;
+
 							putpixel(screen, x, y,
-								GET_PIXEL(bbitmap1, src_x, src_y, 0),
-								GET_PIXEL(bbitmap1, src_x, src_y, 1),
-								GET_PIXEL(bbitmap1, src_x, src_y, 2));
+								(a*sr+ir*(255-a))/255,
+								(a*sg+ig*(255-a))/255,
+								(a*sb+ib*(255-a))/255);
 						}
 
 					break;
@@ -193,16 +221,26 @@ int main(int argc, char *argv[])
 					src.x = args[4]; src.y = args[5]; src.w = args[6]; src.h = args[7];
 					dst.x = mem[args[0]]; dst.y = mem[args[1]]; dst.w = args[2]; dst.h = args[3];
 
-					/* scaling/clipping algorithm */
+					/* scaling/clipping/alpha-blending algorithm */
 					for(y = dst.y; y < dst.y + dst.h; ++y)
 						for(x = dst.x; x < dst.x + dst.w; ++x)
 						{
 							uchar src_x = src.x + src.w * (x - dst.x) / dst.w;
 							uchar src_y = src.y + src.h * (y - dst.y) / dst.h;
+							uchar sr = getrgb(screen, x, y, 0);			/* screen rgb */
+							uchar sg = getrgb(screen, x, y, 1);
+							uchar sb = getrgb(screen, x, y, 2);
+							uchar ir = getrgb(bitmap1, src_x, src_y, 0);	/* image rgb */
+							uchar ig = getrgb(bitmap1, src_x, src_y, 1);
+							uchar ib = getrgb(bitmap1, src_x, src_y, 2);
+							uchar a = getrgb(bitmap2, src_x, src_y, 0);	/* alpha */
+
+							if(a==255) continue;
+
 							putpixel(screen, x, y,
-								GET_PIXEL(bbitmap1, src_x, src_y, 0),
-								GET_PIXEL(bbitmap1, src_x, src_y, 1),
-								GET_PIXEL(bbitmap1, src_x, src_y, 2));
+								(a*sr+ir*(255-a))/255,
+								(a*sg+ig*(255-a))/255,
+								(a*sb+ib*(255-a))/255);
 						}
 
 					break;
